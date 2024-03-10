@@ -6,10 +6,14 @@ const DEFAULT_WEBHOOK_URL = process.env.WEBHOOK_URL || process.env.DEFAULT_WEBHO
 const SMTP_PORT = process.env.SMTP_PORT || 2525;
 const SMTP_USERNAME = process.env.SMTP_USERNAME;
 const SMTP_PASSWORD = process.env.SMTP_PASSWORD;
+const MESSAGE_TYPE = process.env.MESSAGE_TYPE || 'embed';
+
+if (!['embed', 'message'].includes(MESSAGE_TYPE)) {
+    throw `Invalid MESSAGE_TYPE: ${MESSAGE_TYPE}. Options are 'embed' (default) or 'message'`;
+}
 
 if (!DEFAULT_WEBHOOK_URL) {
-    console.error('WEBHOOK_URL environment variable is required');
-    process.exit(1);
+    throw "WEBHOOK_URL environment variable is required";
 }
 
 const getWebhookMapping = () => {
@@ -21,8 +25,7 @@ const getWebhookMapping = () => {
 const webhookMappings = getWebhookMapping();
 
 if (!SMTP_USERNAME || !SMTP_PASSWORD) {
-    console.error('SMTP_USERNAME and SMTP_PASSWORD environment variables are required');
-    process.exit(1);
+    throw "SMTP_USERNAME and SMTP_PASSWORD environment variables are required";
 }
 
 const smtpServer = new SMTPServer({
@@ -56,24 +59,41 @@ const smtpServer = new SMTPServer({
                     return "unknown-recipient@unknown.local";
                 }
                 const recipient = getRecipient();
+
+                const webhookUrl = webhookMappings[recipient] || DEFAULT_WEBHOOK_URL;
                 
-                const embed = {
-                    author: {
-                        name: from
-                    },
-                    title: subject,
-                    description: parsed.text,
-                    timestamp: parsed.date || new Date(),
-                    footer: {
-                        text: `Recipient: ${recipient}`
+                const getPostRequest = () => {
+                    if (MESSAGE_TYPE === 'embed') {
+                        return {
+                            embeds: [{
+                                author: {
+                                    name: from
+                                },
+                                title: subject,
+                                description: parsed.text,
+                                timestamp: parsed.date || new Date(),
+                                footer: {
+                                    text: `Recipient: ${recipient}`
+                                }
+                            }]
+                        }
+                    } else {
+                        return {
+                            content: `
+                                **From:** ${from}
+                                **To:** ${recipient}
+                                **Subject:** ${subject}
+                                **Timestamp:** ${(parsed.date || new Date()).toLocaleDateString()}
+                                \`\`\`
+                                ${parsed.text}
+                                \`\`\`
+                            `
+                        }
                     }
                 }
 
-                const webhookUrl = webhookMappings[recipient] || DEFAULT_WEBHOOK_URL;
                 // Forwarding message to Discord
-                axios.post(webhookUrl, {
-                    embeds: [embed]
-                })
+                axios.post(webhookUrl, getPostRequest())
                 .then(() => {
                     console.log(`Email from ${from} to ${recipient}: Forwarded to Discord`);
                 })

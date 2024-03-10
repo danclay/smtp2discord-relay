@@ -1,18 +1,21 @@
 version: "3"
 services:
-  server:
-    build:
+  smtp2discord:
+    build: # for local building. Replace with "image: ghcr.io/danclay/smtp2discord-relay:latest"
       context: .
     environment:
-      - SMTP_PORT=2525 # Port on the container
+      - SMTP_PORT=2525 # Port on the container (2525 default)
       - SMTP_USERNAME=postmaster
       - SMTP_PASSWORD=mypassword
 
-      # Single webhook destination
+      # Type of Discord message. Either "embed" (default) or "message"
+      - MESSAGE_TYPE=embed
+
+      # Single webhook destination (required)
       - WEBHOOK_URL=https://discord.com/api/webhooks/1234/blahblah
 
-      # OR use a mapping of recipients to webhook URLS (Format is "EMAIL|URL,EMAIL2|URL2")
+      # OR use a mapping of recipients to webhook URLS (Format is "EMAIL|URL,EMAIL2|URL2,EMAIL3|URL3"). This is optional.
       # The default webhook can be defined with WEBHOOK_URL or DEFAULT_WEBHOOK_URL
       - MAPPED_WEBHOOKS=email1@me.local|https://discord.com/api/webhooks/1234/blahblah,email2@me.local|https://discord.com/api/webhooks/5678/blah
     ports:
-      - 2525:2525 # host:container
+      - "2525:2525" # host:container
