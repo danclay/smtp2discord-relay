@@ -32,10 +32,18 @@ const smtpServer = new SMTPServer({
             .then(parsed => {
                 const subject = parsed.subject || 'No subject';
                 const from = parsed.from.text || 'Unknown sender';
-                const content = `New email received:\nFrom: ${from}\nSubject: ${subject}\nContent: ${parsed.text}`;
+                
+                const embed = {
+                    author: {
+                        name: from
+                    },
+                    title: subject,
+                    description: parsed.text,
+                    timestamp: parsed.date || new Date()
+                }
                 // Forwarding message to Discord
                 axios.post(WEBHOOK_URL, {
-                    content: content
+                    embeds: [embed]
                 })
                 .then(() => {
                     console.log('Email forwarded to Discord');
