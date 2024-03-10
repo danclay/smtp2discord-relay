@@ -4,6 +4,9 @@ services:
     build:
       context: .
     environment:
-      NODE_ENV: production
+      - SMTP_PORT=2525 # Port on the container
+      - SMTP_USERNAME=postmaster # Username for SMTP
+      - SMTP_PASSWORD=mypassword # Password for SMTP
+      - WEBHOOK_URL=https://discord.com/api/webhooks/1234/blahblah # Your Discord webhook URL
     ports:
-      - 2525:2525
+      - 2525:2525 # host:container
