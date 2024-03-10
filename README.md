@@ -8,7 +8,7 @@ A simple relay to forward SMTP messages to a Discord webhook.
 version: "3"
 services:
   server:
-    image: docker pull ghcr.io/danclay/smtp2discord:latest
+    image: docker pull ghcr.io/danclay/smtp2discord-relay:latest
     environment:
       - SMTP_PORT=2525 # Port on the container
       - SMTP_USERNAME=postmaster
