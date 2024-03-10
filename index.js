@@ -1,4 +1,5 @@
 const { SMTPServer } = require('smtp-server');
+const { simpleParser } = require('mailparser');
 const axios = require('axios');
 
 const WEBHOOK_URL = process.env.WEBHOOK_URL;
@@ -27,23 +28,27 @@ const smtpServer = new SMTPServer({
         }
     },
     onData(stream, session, callback) {
-        let emailData = '';
-        stream.on('data', chunk => {
-            emailData += chunk;
-        });
-        stream.on('end', () => {
-            // Forwarding message to Discord
-            axios.post(WEBHOOK_URL, {
-                content: `New email received:\n${emailData}`
-            })
-            .then(() => {
-                console.log('Email forwarded to Discord');
+        simpleParser(stream)
+            .then(parsed => {
+                const subject = parsed.subject || 'No subject';
+                const from = parsed.from.text || 'Unknown sender';
+                const content = `New email received:\nFrom: ${from}\nSubject: ${subject}\nContent: ${parsed.text}`;
+                // Forwarding message to Discord
+                axios.post(WEBHOOK_URL, {
+                    content: content
+                })
+                .then(() => {
+                    console.log('Email forwarded to Discord');
+                })
+                .catch(err => {
+                    console.error('Failed to send message to Discord', err);
+                });
+                callback(); // Accept the message
             })
             .catch(err => {
-                console.error('Failed to send message to Discord', err);
+                console.error('Error parsing email', err);
+                callback(err);
             });
-            callback(); // Accept the message
-        });
     }
 });
 
