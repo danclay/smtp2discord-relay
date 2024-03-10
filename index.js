@@ -7,7 +7,7 @@ const SMTP_PORT = process.env.SMTP_PORT || 2525;
 const SMTP_USERNAME = process.env.SMTP_USERNAME;
 const SMTP_PASSWORD = process.env.SMTP_PASSWORD;
 
-if (!WEBHOOK_URL) {
+if (!DEFAULT_WEBHOOK_URL) {
     console.error('WEBHOOK_URL environment variable is required');
     process.exit(1);
 }
